@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatBytes, formatDate, getDaysSince } from "@/lib/utils";
+
 import {
   Search,
   Filter,
@@ -52,51 +53,21 @@ export default function FileInventory() {
   const limit = 100;
 
   useEffect(() => {
-    let cancelled = false;
     setLoading(true);
-    setError(null);
-
-    Promise.all([
-      fetch(`http://localhost:8000/files?skip=${page * limit}&limit=${limit}`),
-      fetch("http://localhost:8000/access"),
-    ])
-      .then(async ([filesRes, accessRes]) => {
-        if (!filesRes.ok) throw new Error("Failed to fetch files");
-        if (!accessRes.ok) throw new Error("Failed to fetch access data");
-
-        const filesData = await filesRes.json();
-        const accessData = await accessRes.json();
-
-        // Build lookup: fileId -> accessClass
-        const accessMap: Record<string, string> = {};
-        for (const a of accessData) {
-          if (a.fileId && a.accessClass) {
-            accessMap[a.fileId] = a.accessClass;
-          }
-        }
-
-        // Merge tier into files
-        const mergedFiles = filesData.map((f: any) => ({
-          ...f,
-          tier: accessMap[f.fileId] || "UNKNOWN",
-        }));
-
-        if (!cancelled) {
-          setFiles(mergedFiles);
-          setLoading(false);
-        }
+    fetch(`http://localhost:8000/access?skip=${page * limit}&limit=${limit}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
+      .then((data) => {
+        setFiles(data);
+        setLoading(false);
       })
       .catch((err) => {
-        if (!cancelled) {
-          setError(err.message || "Something went wrong");
-          setLoading(false);
-        }
+        setError(err.message);
+        setLoading(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [page, limit]);
+  }, [page]);
 
   const filteredFiles = files.filter((file) => {
     const matchesSearch =
@@ -218,25 +189,26 @@ export default function FileInventory() {
                     <TableCell>
                       <div>
                         <span>
-                          {file.lastAccessedAt
-                            ? formatDate(new Date(file.lastAccessedAt))
+                          {file.osAccessedAt
+                            ? formatDate(new Date(file.osAccessedAt))
                             : ""}
                         </span>
                         <span className="block text-xs text-muted-foreground">
-                          {file.lastAccessedAt
-                            ? getDaysSince(new Date(file.lastAccessedAt))
+                          {file.osAccessedAt
+                            ? getDaysSince(new Date(file.osAccessedAt))
                             : ""}{" "}
                           days ago
                         </span>
                       </div>
                     </TableCell>
+
                     <TableCell>
                       {file.modifiedAt
                         ? formatDate(new Date(file.modifiedAt))
                         : ""}
                     </TableCell>
                     <TableCell>
-                      <TierBadge tier={file.tier || "UNKNOWN"} />
+                      <TierBadge tier={file.accessClass || "UNKNOWN"} />
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={file.fileStatus || "Local"} />

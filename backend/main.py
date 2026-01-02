@@ -23,7 +23,7 @@ MONGO_URI = os.environ.get("MONGO_URI") or "mongodb+srv://Gaganfnr:ndLz9yHCsOmv9
 client = AsyncIOMotorClient(MONGO_URI)
 db = client.test
 
-@app.get("/files")
+@app.get("/access")
 async def list_files(
     skip: int = 0,
     limit: int = 100,
@@ -44,13 +44,13 @@ async def list_files(
         if max_size is not None:
             size_q["$lte"] = max_size
         filter_q["sizeBytes"] = size_q
-    docs = await db.FileMetaLatest.find(filter_q, {"_id": 0}) \
+    docs = await db.FileMetaAccess.find(filter_q, {"_id": 0}) \
         .skip(skip).limit(limit).to_list(length=limit)
     return docs
 
-@app.get("/files/{file_id}")
+@app.get("/access/{file_id}")
 async def get_file(file_id: str):
-    doc = await db.FileMetaLatest.find_one({"fileId": file_id}, {"_id": 0})
+    doc = await db.FileMetaAccess.find_one({"fileId": file_id}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="File not found")
     return doc
