@@ -25,6 +25,7 @@ import {
   HardDrive,
 } from "lucide-react";
 import { useState } from "react";
+import { fetchDashboardData } from "@/api/dashboard";
 
 export default function Deduplication() {
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
@@ -34,6 +35,7 @@ export default function Deduplication() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const limit = 25;
+  const [metrics, setMetrics] = useState<any>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -71,6 +73,37 @@ export default function Deduplication() {
     );
   };
 
+  useEffect(() => {
+    fetchDashboardData()
+      .then((data) => {
+        const mapped = {
+          total_storage_tb: Number((data.totalSizeBytes / 1e12).toFixed(2)),
+          files_scanned: data.totalFiles,
+          estimated_savings: Math.round(data.duplicateFiles * 0.05), // example logic
+          duplicate_files: data.duplicateFiles,
+          duplicate_groups: data.duplicateGroups,
+          restores_in_progress: 0,
+
+          by_tier: {
+            hot: data.hotFiles,
+            warm: data.warmFiles,
+            cold: data.coldFiles,
+            archive: 0,
+          },
+
+          aging: {
+            "0-30": Math.round(data.hotFiles * 0.6),
+            "30-90": Math.round(data.hotFiles * 0.4),
+            "90-180": Math.round(data.coldFiles * 0.6),
+            "180+": Math.round(data.coldFiles * 0.4),
+          },
+        };
+
+        setMetrics(mapped);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div>
       <PageHeader
@@ -89,19 +122,18 @@ export default function Deduplication() {
           </div>
         }
       />
-
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <StatCard
           title="Duplicate Groups"
-          value={groups.length}
+          value={metrics?.duplicate_groups ?? 0}
           subtitle="groups identified"
           icon={Copy}
           iconColor="text-warning"
         />
         <StatCard
           title="Duplicate Files"
-          value={totalDuplicateFiles}
+          value={metrics?.duplicate_files ?? 0}
           subtitle="files can be removed"
           icon={FileText}
           iconColor="text-info"
@@ -114,7 +146,6 @@ export default function Deduplication() {
           iconColor="text-success"
         />
       </div>
-
       {/* Selected Actions */}
       {selectedGroups.length > 0 && (
         <Card className="mb-4 border-primary">
@@ -138,106 +169,115 @@ export default function Deduplication() {
           </CardContent>
         </Card>
       )}
-
       {/* Duplicate Groups */}
       <div className="space-y-4">
-        {groups.map((group, idx) => (
-          <Card key={group._id || group.fingerprint || idx}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={selectedGroups.includes(group.id)}
-                    onCheckedChange={() => toggleGroup(group.id)}
-                  />
-                  <div>
-                    <CardTitle className="text-sm font-mono">
-                      {group.fingerprint || group.hash}
-                    </CardTitle>
-                    <div className="flex items-center gap-3 mt-1">
-                      <Badge variant="secondary">
-                        {group.files.length} files
-                      </Badge>
-                      <span className="text-sm text-success font-medium">
-                        Save{" "}
-                        {group.potentialSavings !== undefined
-                          ? formatBytes(group.potentialSavings)
-                          : ""}
-                      </span>
+        {groups.map((group, idx) => {
+          const groupKey = group.fingerprint; // ✅ CORRECT PLACE
+
+          return (
+            <Card key={groupKey}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedGroups.includes(groupKey)}
+                      onCheckedChange={() => toggleGroup(groupKey)}
+                    />
+
+                    <div>
+                      <CardTitle className="text-sm font-mono">
+                        {group.fingerprint}
+                      </CardTitle>
+
+                      <div className="flex items-center gap-3 mt-1">
+                        <Badge variant="secondary">
+                          {group.files.length} files
+                        </Badge>
+
+                        <span className="text-sm text-success font-medium">
+                          Save{" "}
+                          {group.potentialSavings
+                            ? formatBytes(group.potentialSavings)
+                            : "—"}
+                        </span>
+                      </div>
                     </div>
                   </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      setExpandedGroup(
+                        expandedGroup === groupKey ? null : groupKey
+                      )
+                    }
+                  >
+                    {expandedGroup === groupKey ? "Hide" : "Show"} Files
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    setExpandedGroup(
-                      expandedGroup === group.id ? null : group.id
-                    )
-                  }
-                >
-                  {expandedGroup === group.id ? "Hide" : "Show"} Files
-                </Button>
-              </div>
-            </CardHeader>
-            {expandedGroup === group.id && (
-              <CardContent className="pt-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>File Name</TableHead>
-                      <TableHead>Path</TableHead>
-                      <TableHead className="text-right">Size</TableHead>
-                      <TableHead className="w-[100px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {group.files.map((file, index) => (
-                      <TableRow key={file.fullPath || file._id || index}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
-                              {(file.fullPath || file.path || "")
-                                .split("/")
-                                .pop() || ""}
-                            </span>
-                            {index === 0 && (
-                              <Badge variant="outline" className="text-xs">
-                                Original
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-muted-foreground font-mono text-sm">
-                            <Folder className="h-3 w-3" />
-                            {file.fullPath || file.path || ""}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatBytes(file.sizeBytes || file.size || 0)}
-                        </TableCell>
-                        <TableCell>
-                          {index > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </TableCell>
+              </CardHeader>
+
+              {expandedGroup === groupKey && (
+                <CardContent className="pt-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>File Name</TableHead>
+                        <TableHead>Path</TableHead>
+                        <TableHead className="text-right">Size</TableHead>
+                        <TableHead className="w-[100px]"></TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            )}
-          </Card>
-        ))}
+                    </TableHeader>
+
+                    <TableBody>
+                      {group.files.map((file, index) => (
+                        <TableRow key={file.fullPath || index}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">
+                                {(file.fullPath || "").split("/").pop()}
+                              </span>
+
+                              {index === 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  Original
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="font-mono text-sm">
+                            {file.fullPath}
+                          </TableCell>
+
+                          <TableCell className="text-right font-mono">
+                            {formatBytes(file.sizeBytes || 0)}
+                          </TableCell>
+
+                          <TableCell>
+                            {index > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
       </div>
+
       {/* Pagination for duplicate groups */}
       <div className="flex items-center justify-between mt-4">
         <Button
