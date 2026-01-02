@@ -175,13 +175,13 @@ export default function Dashboard() {
         />
         <StatCard
           title="Est. Cost Savings"
-          value={formatCurrency(metrics.estimated_savings)}
+          value={"-"}
           subtitle="per month"
           icon={DollarSign}
         />
         <StatCard
           title="Pending Archival"
-          value={formatNumber(metrics.pending_archival)}
+          value={"-"}
           subtitle={`${metrics.restores_in_progress} restores in progress`}
           icon={Clock}
         />
@@ -198,6 +198,9 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="text-xl font-bold mt-1">{storageByTier.hot} File</p>
+            <span className="text-xs text-muted-foreground">
+              Accessed in last 30 days
+            </span>
           </CardContent>
         </Card>
 
@@ -210,6 +213,9 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="text-xl font-bold mt-1">{storageByTier.warm} File</p>
+            <span className="text-xs text-muted-foreground">
+              Accessed 30–90 days ago
+            </span>
           </CardContent>
         </Card>
 
@@ -222,6 +228,9 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="text-xl font-bold mt-1">{storageByTier.cold} File</p>
+            <span className="text-xs text-muted-foreground">
+              Not accessed in 90+ days
+            </span>
           </CardContent>
         </Card>
 

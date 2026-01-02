@@ -140,7 +140,7 @@ export default function Deduplication() {
         />
         <StatCard
           title="Potential Savings"
-          value={formatBytes(totalPotentialSavings)}
+          value={"-"}
           subtitle="space recoverable"
           icon={HardDrive}
           iconColor="text-success"
