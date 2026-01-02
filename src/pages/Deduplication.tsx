@@ -198,7 +198,9 @@ export default function Deduplication() {
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">
-                              {file.fileName || file.name || ""}
+                              {(file.fullPath || file.path || "")
+                                .split("/")
+                                .pop() || ""}
                             </span>
                             {index === 0 && (
                               <Badge variant="outline" className="text-xs">
@@ -235,6 +237,26 @@ export default function Deduplication() {
             )}
           </Card>
         ))}
+      </div>
+      {/* Pagination for duplicate groups */}
+      <div className="flex items-center justify-between mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page === 0}
+          onClick={() => setPage((p) => Math.max(p - 1, 0))}
+        >
+          Previous
+        </Button>
+        <span className="text-sm">Page {page + 1}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={groups.length < limit}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Next
+        </Button>
       </div>
     </div>
   );
