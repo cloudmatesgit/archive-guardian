@@ -44,6 +44,15 @@ import { Tier, FileStatus } from "@/types";
 
 export default function FileInventory() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [pendingQuery, setPendingQuery] = useState("");
+
+  const clearFilters = () => {
+    setTierFilter("all");
+    setStatusFilter("all");
+    setSearchQuery("");
+    setPendingQuery("");
+    setPage(0);
+  };
   const [tierFilter, setTierFilter] = useState<Tier | "all">("all");
   const [statusFilter, setStatusFilter] = useState<FileStatus | "all">("all");
   const [files, setFiles] = useState<any[]>([]);
@@ -96,7 +105,8 @@ export default function FileInventory() {
 
   useEffect(() => {
     setPage(0);
-  }, [tierFilter, searchQuery]);
+    setPendingQuery(""); // Clear the search box when tier changes
+  }, [tierFilter]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -118,14 +128,33 @@ export default function FileInventory() {
       <Card className="mb-6">
         <CardContent className="pt-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
+            <div className="flex flex-1 items-center gap-2 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search files by name or path..."
                 className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={pendingQuery}
+                onChange={(e) => setPendingQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setSearchQuery(pendingQuery);
+                }}
+                style={{ minWidth: "300px" }}
               />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSearchQuery(pendingQuery)}
+              >
+                Search
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-2"
+                onClick={clearFilters}
+              >
+                Clear
+              </Button>
             </div>
             <div className="flex gap-3">
               <Select
