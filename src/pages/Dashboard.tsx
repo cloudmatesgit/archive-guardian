@@ -31,7 +31,7 @@ import {
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { formatDateTime } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { fetchDashboardData } from "@/api/dashboard";
+import { fetchDashboardData, fetchDashboardTrends } from "@/api/dashboard";
 
 const tierColors = {
   hot: "#ef4444",
@@ -43,33 +43,51 @@ const tierColors = {
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<any>(null);
+  const [trendData, setTrendData] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchDashboardData()
-      .then((data) => {
-        const mapped = {
-          total_storage_tb: Number((data.totalSizeBytes / 1e12).toFixed(2)),
-          files_scanned: data.totalFiles,
-          estimated_savings: Math.round(data.duplicateFiles * 0.05), // example logic
-          pending_archival: data.duplicateFiles,
+    fetchDashboardTrends()
+      .then((trends) => {
+        const latest = trends[0]; // API returns latest first
+
+        // ---------- CARDS ----------
+        const mappedMetrics = {
+          total_storage_tb: Number((latest.totalSizeBytes / 1e12).toFixed(2)),
+          files_scanned: latest.totalFiles,
+          estimated_savings: Math.round(latest.duplicateFiles * 0.05),
+          pending_archival: latest.duplicateFiles,
           restores_in_progress: 0,
 
           by_tier: {
-            hot: data.hotFiles,
-            warm: data.warmFiles,
-            cold: data.coldFiles,
+            hot: latest.hotFiles,
+            warm: latest.warmFiles,
+            cold: latest.coldFiles,
             archive: 0,
           },
 
           aging: {
-            "0-30": Math.round(data.hotFiles * 0.6),
-            "30-90": Math.round(data.hotFiles * 0.4),
-            "90-180": Math.round(data.coldFiles * 0.6),
-            "180+": Math.round(data.coldFiles * 0.4),
+            "0-30": Math.round(latest.hotFiles * 0.6),
+            "30-90": Math.round(latest.hotFiles * 0.4),
+            "90-180": Math.round(latest.coldFiles * 0.6),
+            "180+": Math.round(latest.coldFiles * 0.4),
           },
         };
 
-        setMetrics(mapped);
+        setMetrics(mappedMetrics);
+
+        // ---------- TREND CHART ----------
+        const chartData = [...trends]
+          .reverse() // oldest → latest
+          .map((day) => ({
+            date: day.date,
+            hot: day.hotFiles,
+            warm: day.warmFiles,
+            cold: day.coldFiles,
+            total: day.totalFiles,
+            duplicates: day.duplicateFiles,
+          }));
+
+        setTrendData(chartData);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -226,6 +244,26 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader>
+            <CardTitle className="text-base">File Trend Over Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={trendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="hot" fill={tierColors.hot} />
+                <Bar dataKey="warm" fill={tierColors.warm} />
+                <Bar dataKey="cold" fill={tierColors.cold} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">Storage by Tier</CardTitle>
           </CardHeader>
           <CardContent>
@@ -247,27 +285,6 @@ export default function Dashboard() {
                 <Tooltip />
                 <Legend />
               </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">File Aging Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={fileAgingData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" />
-                <YAxis unit=" File" />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="hot" fill={tierColors.hot} />
-                <Bar dataKey="warm" fill={tierColors.warm} />
-                <Bar dataKey="cold" fill={tierColors.cold} />
-                <Bar dataKey="archive" fill={tierColors.archive} />
-              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

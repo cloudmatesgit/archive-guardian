@@ -10,3 +10,12 @@ export async function fetchDashboardData() {
   // API returns latest first
   return data[0];
 }
+export async function fetchDashboardTrends() {
+  const res = await fetch("http://localhost:8000/trends/daily");
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch dashboard trends");
+  }
+
+  return res.json(); // 👈 full array
+}
