@@ -54,7 +54,18 @@ export default function FileInventory() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:8000/access?skip=${page * limit}&limit=${limit}`)
+    setError(null);
+    const params: Record<string, string | number> = {
+      skip: page * limit,
+      limit,
+    };
+    if (searchQuery) params.filename = searchQuery;
+    if (tierFilter && tierFilter !== "all") params.tier = tierFilter;
+    // If you want to filter by status, add here: params.status = statusFilter;
+    const searchStr = Object.entries(params)
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+      .join("&");
+    fetch(`http://localhost:8000/access?${searchStr}`)
       .then((res) => {
         if (!res.ok) throw new Error("Network response was not ok");
         return res.json();
@@ -67,19 +78,25 @@ export default function FileInventory() {
         setError(err.message);
         setLoading(false);
       });
-  }, [page]);
+  }, [page, searchQuery, tierFilter, limit]);
 
-  const filteredFiles = files.filter((file) => {
-    const matchesSearch =
-      (file.fileName?.toLowerCase() || "").includes(
-        searchQuery.toLowerCase()
-      ) ||
-      (file.fullPath?.toLowerCase() || "").includes(searchQuery.toLowerCase());
-    // Uncomment and adjust if your API data returns tier/status fields:
-    // const matchesTier = tierFilter === 'all' || file.tier === tierFilter;
-    // const matchesStatus = statusFilter === 'all' || file.status === statusFilter;
-    return matchesSearch; // && matchesTier && matchesStatus;
-  });
+  // const filteredFiles = files.filter((file) => {
+  //   const matchesSearch =
+  //     (file.fileName?.toLowerCase() || "").includes(
+  //       searchQuery.toLowerCase()
+  //     ) ||
+  //     (file.fullPath?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+  //   // Uncomment and adjust if your API data returns tier/status fields:
+  //   // const matchesTier = tierFilter === 'all' || file.tier === tierFilter;
+  //   // const matchesStatus = statusFilter === 'all' || file.status === statusFilter;
+  //   return matchesSearch; // && matchesTier && matchesStatus;
+  // });
+
+  const filteredFiles = files;
+
+  useEffect(() => {
+    setPage(0);
+  }, [tierFilter, searchQuery]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -124,7 +141,7 @@ export default function FileInventory() {
                   <SelectItem value="HOT">HOT</SelectItem>
                   <SelectItem value="WARM">WARM</SelectItem>
                   <SelectItem value="COLD">COLD</SelectItem>
-                  <SelectItem value="ARCHIVE">ARCHIVE</SelectItem>
+                  {/* <SelectItem value="ARCHIVE">ARCHIVE</SelectItem> */}
                 </SelectContent>
               </Select>
               <Select
@@ -208,7 +225,7 @@ export default function FileInventory() {
                         : ""}
                     </TableCell>
                     <TableCell>
-                      <TierBadge tier={file.accessClass || "UNKNOWN"} />
+                      <TierBadge tier={file.accessClass ?? "UNKNOWN"} />
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={file.fileStatus || "Local"} />

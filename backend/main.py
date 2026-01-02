@@ -27,16 +27,23 @@ db = client.test
 async def list_files(
     skip: int = 0,
     limit: int = 100,
-    filename: str = None,
-    folder: str = None,
-    min_size: int = None,
-    max_size: int = None
+    filename: str | None = None,
+    folder: str | None = None,
+    min_size: int | None = None,
+    max_size: int | None = None,
+    tier: str | None = None,   # 👈 HOT / WARM / COLD
 ):
     filter_q = {}
+
+    # 🔍 search by filename
     if filename:
         filter_q["fileName"] = {"$regex": filename, "$options": "i"}
+
+    # 📁 folder filter
     if folder:
         filter_q["fullPath"] = {"$regex": f"^{folder}", "$options": "i"}
+
+    # 📦 size filter
     if min_size is not None or max_size is not None:
         size_q = {}
         if min_size is not None:
@@ -44,9 +51,22 @@ async def list_files(
         if max_size is not None:
             size_q["$lte"] = max_size
         filter_q["sizeBytes"] = size_q
-    docs = await db.FileMetaAccess.find(filter_q, {"_id": 0}) \
-        .skip(skip).limit(limit).to_list(length=limit)
+
+    # 🧊 tier filter (HOT / WARM / COLD)
+    if tier and tier.lower() != "all":
+        filter_q["accessClass"] = tier.upper()
+
+    cursor = (
+        db.FileMetaAccess
+        .find(filter_q, {"_id": 0})
+        .sort("fileName", 1)
+        .skip(skip)
+        .limit(limit)
+    )
+
+    docs = await cursor.to_list(length=limit)
     return docs
+
 
 @app.get("/access/{file_id}")
 async def get_file(file_id: str):
@@ -66,11 +86,6 @@ async def get_duplicate_group(fingerprint: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Duplicate group not found")
     return doc
-
-@app.get("/access")
-async def list_access(skip: int = 0, limit: int = 100):
-    docs = await db.FileMetaAccess.find({}, {"_id": 0}).skip(skip).limit(limit).to_list(length=limit)
-    return docs
 
 @app.get("/heatmap")
 async def get_heatmap(skip: int = 0, limit: int = 100):
