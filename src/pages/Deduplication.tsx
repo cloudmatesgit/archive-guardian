@@ -1,9 +1,9 @@
-import { PageHeader } from '@/components/common/PageHeader';
-import { StatCard } from '@/components/common/StatCard';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { PageHeader } from "@/components/common/PageHeader";
+import { StatCard } from "@/components/common/StatCard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -11,22 +11,55 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { mockDuplicates } from '@/data/mockData';
-import { formatBytes, formatNumber } from '@/lib/utils';
-import { Copy, Play, Download, Trash2, Eye, FileText, Folder, HardDrive } from 'lucide-react';
-import { useState } from 'react';
+} from "@/components/ui/table";
+import { useEffect } from "react";
+import { formatBytes, formatNumber } from "@/lib/utils";
+import {
+  Copy,
+  Play,
+  Download,
+  Trash2,
+  Eye,
+  FileText,
+  Folder,
+  HardDrive,
+} from "lucide-react";
+import { useState } from "react";
 
 export default function Deduplication() {
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const limit = 25;
 
-  const totalPotentialSavings = mockDuplicates.reduce(
-    (acc, group) => acc + group.potentialSavings,
+  useEffect(() => {
+    setLoading(true);
+    fetch(
+      `http://localhost:8000/duplicates?skip=${page * limit}&limit=${limit}`
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
+      .then((data) => {
+        setGroups(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [page]);
+
+  const totalPotentialSavings = groups.reduce(
+    (acc, group) => acc + (group.potentialSavings || 0),
     0
   );
-  const totalDuplicateFiles = mockDuplicates.reduce(
-    (acc, group) => acc + group.files.length - 1,
+  const totalDuplicateFiles = groups.reduce(
+    (acc, group) => acc + (group.files.length - 1),
     0
   );
 
@@ -61,7 +94,7 @@ export default function Deduplication() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <StatCard
           title="Duplicate Groups"
-          value={mockDuplicates.length}
+          value={groups.length}
           subtitle="groups identified"
           icon={Copy}
           iconColor="text-warning"
@@ -88,7 +121,8 @@ export default function Deduplication() {
           <CardContent className="py-3">
             <div className="flex items-center justify-between">
               <p className="text-sm">
-                <span className="font-medium">{selectedGroups.length}</span> group(s) selected
+                <span className="font-medium">{selectedGroups.length}</span>{" "}
+                group(s) selected
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm">
@@ -107,8 +141,8 @@ export default function Deduplication() {
 
       {/* Duplicate Groups */}
       <div className="space-y-4">
-        {mockDuplicates.map((group) => (
-          <Card key={group.id}>
+        {groups.map((group, idx) => (
+          <Card key={group._id || group.fingerprint || idx}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -117,11 +151,18 @@ export default function Deduplication() {
                     onCheckedChange={() => toggleGroup(group.id)}
                   />
                   <div>
-                    <CardTitle className="text-sm font-mono">{group.hash}</CardTitle>
+                    <CardTitle className="text-sm font-mono">
+                      {group.fingerprint || group.hash}
+                    </CardTitle>
                     <div className="flex items-center gap-3 mt-1">
-                      <Badge variant="secondary">{group.files.length} files</Badge>
+                      <Badge variant="secondary">
+                        {group.files.length} files
+                      </Badge>
                       <span className="text-sm text-success font-medium">
-                        Save {formatBytes(group.potentialSavings)}
+                        Save{" "}
+                        {group.potentialSavings !== undefined
+                          ? formatBytes(group.potentialSavings)
+                          : ""}
                       </span>
                     </div>
                   </div>
@@ -130,10 +171,12 @@ export default function Deduplication() {
                   variant="ghost"
                   size="sm"
                   onClick={() =>
-                    setExpandedGroup(expandedGroup === group.id ? null : group.id)
+                    setExpandedGroup(
+                      expandedGroup === group.id ? null : group.id
+                    )
                   }
                 >
-                  {expandedGroup === group.id ? 'Hide' : 'Show'} Files
+                  {expandedGroup === group.id ? "Hide" : "Show"} Files
                 </Button>
               </div>
             </CardHeader>
@@ -150,11 +193,13 @@ export default function Deduplication() {
                   </TableHeader>
                   <TableBody>
                     {group.files.map((file, index) => (
-                      <TableRow key={file.id}>
+                      <TableRow key={file.fullPath || file._id || index}>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{file.name}</span>
+                            <span className="font-medium">
+                              {file.fileName || file.name || ""}
+                            </span>
                             {index === 0 && (
                               <Badge variant="outline" className="text-xs">
                                 Original
@@ -165,11 +210,11 @@ export default function Deduplication() {
                         <TableCell>
                           <div className="flex items-center gap-1 text-muted-foreground font-mono text-sm">
                             <Folder className="h-3 w-3" />
-                            {file.path}
+                            {file.fullPath || file.path || ""}
                           </div>
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          {formatBytes(file.size)}
+                          {formatBytes(file.sizeBytes || file.size || 0)}
                         </TableCell>
                         <TableCell>
                           {index > 0 && (

@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { PageHeader } from '@/components/common/PageHeader';
-import { TierBadge } from '@/components/common/TierBadge';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/common/PageHeader";
+import { TierBadge } from "@/components/common/TierBadge";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -18,16 +18,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Card, CardContent } from '@/components/ui/card';
-import { mockFiles } from '@/data/mockData';
-import { formatBytes, formatDate, getDaysSince } from '@/lib/utils';
+} from "@/components/ui/dropdown-menu";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatBytes, formatDate, getDaysSince } from "@/lib/utils";
 import {
   Search,
   Filter,
@@ -39,22 +38,50 @@ import {
   Trash2,
   FileText,
   Folder,
-} from 'lucide-react';
-import { Tier, FileStatus } from '@/types';
+} from "lucide-react";
+import { Tier, FileStatus } from "@/types";
 
 export default function FileInventory() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [tierFilter, setTierFilter] = useState<Tier | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<FileStatus | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tierFilter, setTierFilter] = useState<Tier | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<FileStatus | "all">("all");
+  const [files, setFiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const limit = 100;
 
-  const filteredFiles = mockFiles.filter((file) => {
+  useEffect(() => {
+    setLoading(true);
+    fetch(`http://localhost:8000/files?skip=${page * limit}&limit=${limit}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
+      .then((data) => {
+        setFiles(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [page]);
+
+  const filteredFiles = files.filter((file) => {
     const matchesSearch =
-      file.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      file.path.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTier = tierFilter === 'all' || file.tier === tierFilter;
-    const matchesStatus = statusFilter === 'all' || file.status === statusFilter;
-    return matchesSearch && matchesTier && matchesStatus;
+      (file.fileName?.toLowerCase() || "").includes(
+        searchQuery.toLowerCase()
+      ) ||
+      (file.fullPath?.toLowerCase() || "").includes(searchQuery.toLowerCase());
+    // Uncomment and adjust if your API data returns tier/status fields:
+    // const matchesTier = tierFilter === 'all' || file.tier === tierFilter;
+    // const matchesStatus = statusFilter === 'all' || file.status === statusFilter;
+    return matchesSearch; // && matchesTier && matchesStatus;
   });
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div>
@@ -83,7 +110,10 @@ export default function FileInventory() {
               />
             </div>
             <div className="flex gap-3">
-              <Select value={tierFilter} onValueChange={(v) => setTierFilter(v as Tier | 'all')}>
+              <Select
+                value={tierFilter}
+                onValueChange={(v) => setTierFilter(v as Tier | "all")}
+              >
                 <SelectTrigger className="w-32">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Tier" />
@@ -98,7 +128,7 @@ export default function FileInventory() {
               </Select>
               <Select
                 value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as FileStatus | 'all')}
+                onValueChange={(v) => setStatusFilter(v as FileStatus | "all")}
               >
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="Status" />
@@ -135,39 +165,60 @@ export default function FileInventory() {
               </TableHeader>
               <TableBody>
                 {filteredFiles.map((file) => (
-                  <TableRow key={file.id}>
+                  <TableRow key={file.fileId}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="font-medium truncate max-w-[250px]">{file.name}</span>
+                        <span className="font-medium truncate max-w-[250px]">
+                          {file.fileName}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Folder className="h-3 w-3" />
-                        <span className="truncate max-w-[200px]">{file.path}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{formatBytes(file.size)}</TableCell>
-                    <TableCell>
-                      <div>
-                        <span>{formatDate(file.lastAccessed)}</span>
-                        <span className="block text-xs text-muted-foreground">
-                          {getDaysSince(file.lastAccessed)} days ago
+                        <span className="truncate max-w-[200px]">
+                          {file.fullPath}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>{formatDate(file.lastModified)}</TableCell>
-                    <TableCell>
-                      <TierBadge tier={file.tier} />
+                    <TableCell className="text-right font-mono">
+                      {formatBytes(file.sizeBytes)}
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={file.status} />
+                      <div>
+                        <span>
+                          {file.lastAccessedAt
+                            ? formatDate(new Date(file.lastAccessedAt))
+                            : ""}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {file.lastAccessedAt
+                            ? getDaysSince(new Date(file.lastAccessedAt))
+                            : ""}{" "}
+                          days ago
+                        </span>
+                      </div>
                     </TableCell>
+                    <TableCell>
+                      {file.modifiedAt
+                        ? formatDate(new Date(file.modifiedAt))
+                        : ""}
+                    </TableCell>
+                    {/* <TableCell>
+                      <TierBadge tier={file.fileTier || "UNKNOWN"} />
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={file.fileStatus || "Local"} />
+                    </TableCell> */}
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -176,13 +227,13 @@ export default function FileInventory() {
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          {file.status === 'Local' && (
+                          {file.status === "Local" && (
                             <DropdownMenuItem>
                               <Archive className="mr-2 h-4 w-4" />
                               Archive
                             </DropdownMenuItem>
                           )}
-                          {file.status === 'Archived' && (
+                          {file.status === "Archived" && (
                             <DropdownMenuItem>
                               <RotateCcw className="mr-2 h-4 w-4" />
                               Restore
@@ -206,13 +257,23 @@ export default function FileInventory() {
       {/* Pagination placeholder */}
       <div className="flex items-center justify-between mt-4">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredFiles.length} of {mockFiles.length} files
+          Showing {filteredFiles.length} files
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(p - 1, 0))}
+          >
             Previous
           </Button>
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={files.length < limit}
+            onClick={() => setPage((p) => p + 1)}
+          >
             Next
           </Button>
         </div>
