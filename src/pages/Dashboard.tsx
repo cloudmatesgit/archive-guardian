@@ -31,7 +31,7 @@ import {
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { formatDateTime } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { fetchDashboardData, fetchDashboardTrends } from "@/api/dashboard";
+import { fetchDashboardTrends } from "@/api/dashboard";
 
 const tierColors = {
   hot: "#ef4444",

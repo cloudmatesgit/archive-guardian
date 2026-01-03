@@ -436,6 +436,28 @@ export default function ArchiveRestore() {
           </div>
         </TabsContent> */}
       </Tabs>
+      <div className="flex gap-2">
+        <p className="text-sm text-muted-foreground">
+          Showing {filteredFiles.length} files
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page === 0}
+          onClick={() => setPage((p) => Math.max(p - 1, 0))}
+        >
+          Previous
+        </Button>
+        <span className="text-sm">Page {page + 1}</span>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={files.length < limit}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }
