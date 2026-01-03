@@ -104,3 +104,6 @@ async def get_trend_day(date: str):
         raise HTTPException(status_code=404, detail="No summary found for that date")
     return doc
 
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
