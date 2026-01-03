@@ -1,5 +1,5 @@
 export async function fetchDashboardData() {
-  const res = await fetch("http://localhost:8000/trends/daily");
+  const res = await fetch("/api/trends/daily");
 
   if (!res.ok) {
     throw new Error("Failed to fetch dashboard data");
@@ -11,7 +11,7 @@ export async function fetchDashboardData() {
   return data[0];
 }
 export async function fetchDashboardTrends() {
-  const res = await fetch("http://localhost:8000/trends/daily");
+  const res = await fetch("/api/trends/daily");
 
   if (!res.ok) {
     throw new Error("Failed to fetch dashboard trends");

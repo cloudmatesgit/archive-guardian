@@ -39,9 +39,7 @@ export default function Deduplication() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(
-      `http://localhost:8000/duplicates?skip=${page * limit}&limit=${limit}`
-    )
+    fetch(`/api/duplicates?skip=${page * limit}&limit=${limit}`)
       .then((res) => {
         if (!res.ok) throw new Error("Network response was not ok");
         return res.json();

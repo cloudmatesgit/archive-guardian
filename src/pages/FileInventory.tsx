@@ -74,7 +74,7 @@ export default function FileInventory() {
     const searchStr = Object.entries(params)
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join("&");
-    fetch(`http://localhost:8000/access?${searchStr}`)
+    fetch(`/api/access?${searchStr}`)
       .then((res) => {
         if (!res.ok) throw new Error("Network response was not ok");
         return res.json();
