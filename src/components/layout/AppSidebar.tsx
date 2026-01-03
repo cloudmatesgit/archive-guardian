@@ -18,9 +18,9 @@ import { useState } from "react";
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: FolderOpen, label: "File Inventory", path: "/files" },
-  { icon: Layers, label: "Tiering Policies", path: "/policies" },
   { icon: Copy, label: "Deduplication", path: "/deduplication" },
   { icon: Archive, label: "Archive", path: "/archive" },
+  { icon: Layers, label: "Tiering Policies", path: "/policies" },
   { icon: Activity, label: "Jobs & Activity", path: "/jobs" },
   { icon: FileBarChart, label: "Reports", path: "/reports" },
   { icon: Settings, label: "Settings", path: "/settings" },

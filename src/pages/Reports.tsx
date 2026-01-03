@@ -1,14 +1,20 @@
-import { PageHeader } from '@/components/common/PageHeader';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { PageHeader } from "@/components/common/PageHeader";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   FileBarChart,
   Download,
@@ -18,47 +24,48 @@ import {
   Copy,
   Calendar,
   Play,
-} from 'lucide-react';
+} from "lucide-react";
 
 const reports = [
   {
-    id: '1',
-    name: 'Cold Data by Folder',
-    description: 'Analyze cold and archive tier data distribution across directories',
+    id: "1",
+    name: "Cold Data by Folder",
+    description:
+      "Analyze cold and archive tier data distribution across directories",
     icon: Snowflake,
-    lastRun: '2024-12-30',
-    frequency: 'Weekly',
+    lastRun: "2024-12-30",
+    frequency: "Weekly",
   },
   {
-    id: '2',
-    name: 'Savings by Tier',
-    description: 'Cost savings breakdown from tiering and archival operations',
+    id: "2",
+    name: "Savings by Tier",
+    description: "Cost savings breakdown from tiering and archival operations",
     icon: DollarSign,
-    lastRun: '2024-12-31',
-    frequency: 'Monthly',
+    lastRun: "2024-12-31",
+    frequency: "Monthly",
   },
   {
-    id: '3',
-    name: 'Largest Files',
-    description: 'Top 100 largest files across all storage tiers',
+    id: "3",
+    name: "Largest Files",
+    description: "Top 100 largest files across all storage tiers",
     icon: FileText,
-    lastRun: '2024-12-29',
-    frequency: 'Daily',
+    lastRun: "2024-12-29",
+    frequency: "Daily",
   },
   {
-    id: '4',
-    name: 'Duplicate Data Summary',
-    description: 'Overview of duplicate files and potential space reclamation',
+    id: "4",
+    name: "Duplicate Data Summary",
+    description: "Overview of duplicate files and potential space reclamation",
     icon: Copy,
-    lastRun: '2024-12-28',
-    frequency: 'Weekly',
+    lastRun: "2024-12-28",
+    frequency: "Weekly",
   },
 ];
 
 const recentExports = [
-  { name: 'savings_report_dec_2024.csv', date: '2024-12-31', size: '2.4 MB' },
-  { name: 'cold_data_analysis.json', date: '2024-12-30', size: '856 KB' },
-  { name: 'duplicate_summary.csv', date: '2024-12-28', size: '1.2 MB' },
+  { name: "savings_report_dec_2024.csv", date: "2024-12-31", size: "2.4 MB" },
+  { name: "cold_data_analysis.json", date: "2024-12-30", size: "856 KB" },
+  { name: "duplicate_summary.csv", date: "2024-12-28", size: "1.2 MB" },
 ];
 
 export default function Reports() {
@@ -66,7 +73,7 @@ export default function Reports() {
     <div>
       <PageHeader
         title="Reports"
-        description="Generate and export storage analytics and insights"
+        description="Generate and export storage analytics and insights (Preview Mode)"
       />
 
       {/* Report Cards */}
@@ -83,7 +90,9 @@ export default function Reports() {
                     </div>
                     <div>
                       <CardTitle className="text-base">{report.name}</CardTitle>
-                      <CardDescription className="mt-1">{report.description}</CardDescription>
+                      <CardDescription className="mt-1">
+                        {report.description}
+                      </CardDescription>
                     </div>
                   </div>
                 </div>
@@ -118,12 +127,16 @@ export default function Reports() {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="text-base">Custom Report Builder</CardTitle>
-          <CardDescription>Create a custom report with specific parameters</CardDescription>
+          <CardDescription>
+            Create a custom report with specific parameters
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Report Type</label>
+              <label className="text-sm font-medium mb-1 block">
+                Report Type
+              </label>
               <Select>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -137,7 +150,9 @@ export default function Reports() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Date Range</label>
+              <label className="text-sm font-medium mb-1 block">
+                Date Range
+              </label>
               <Select>
                 <SelectTrigger>
                   <SelectValue placeholder="Select range" />

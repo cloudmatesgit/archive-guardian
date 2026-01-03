@@ -1,11 +1,11 @@
-import { PageHeader } from '@/components/common/PageHeader';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { mockJobs } from '@/data/mockData';
-import { formatNumber, formatDateTime } from '@/lib/utils';
+import { PageHeader } from "@/components/common/PageHeader";
+import { StatusBadge } from "@/components/common/StatusBadge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { mockJobs } from "@/data/mockData";
+import { formatNumber, formatDateTime } from "@/lib/utils";
 import {
   Play,
   Pause,
@@ -18,9 +18,9 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
-} from 'lucide-react';
-import { useState } from 'react';
-import { Job } from '@/types';
+} from "lucide-react";
+import { useState } from "react";
+import { Job } from "@/types";
 
 const jobTypeIcons = {
   Scan: Search,
@@ -33,9 +33,9 @@ const jobTypeIcons = {
 export default function JobsActivity() {
   const [expandedJob, setExpandedJob] = useState<string | null>(null);
 
-  const runningJobs = mockJobs.filter((j) => j.status === 'Running');
-  const completedJobs = mockJobs.filter((j) => j.status === 'Completed');
-  const failedJobs = mockJobs.filter((j) => j.status === 'Failed');
+  const runningJobs = mockJobs.filter((j) => j.status === "Running");
+  const completedJobs = mockJobs.filter((j) => j.status === "Completed");
+  const failedJobs = mockJobs.filter((j) => j.status === "Failed");
 
   const getJobProgress = (job: Job) => {
     if (job.totalFiles === 0) return 0;
@@ -62,7 +62,7 @@ export default function JobsActivity() {
     <div>
       <PageHeader
         title="Jobs & Activity"
-        description="Monitor and manage system jobs and background tasks"
+        description="Monitor and manage system jobs and background tasks (Preview Mode)"
         actions={
           <Button size="sm">
             <Play className="h-4 w-4 mr-2" />
@@ -128,24 +128,24 @@ export default function JobsActivity() {
                   <div className="flex items-start gap-3 flex-1">
                     <div
                       className={`p-2 rounded-lg ${
-                        job.status === 'Running'
-                          ? 'bg-blue-500/10'
-                          : job.status === 'Completed'
-                          ? 'bg-green-500/10'
-                          : job.status === 'Failed'
-                          ? 'bg-red-500/10'
-                          : 'bg-muted'
+                        job.status === "Running"
+                          ? "bg-blue-500/10"
+                          : job.status === "Completed"
+                          ? "bg-green-500/10"
+                          : job.status === "Failed"
+                          ? "bg-red-500/10"
+                          : "bg-muted"
                       }`}
                     >
                       <Icon
                         className={`h-5 w-5 ${
-                          job.status === 'Running'
-                            ? 'text-blue-600'
-                            : job.status === 'Completed'
-                            ? 'text-green-600'
-                            : job.status === 'Failed'
-                            ? 'text-red-600'
-                            : 'text-muted-foreground'
+                          job.status === "Running"
+                            ? "text-blue-600"
+                            : job.status === "Completed"
+                            ? "text-green-600"
+                            : job.status === "Failed"
+                            ? "text-red-600"
+                            : "text-muted-foreground"
                         }`}
                       />
                     </div>
@@ -159,17 +159,20 @@ export default function JobsActivity() {
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>Started: {formatDateTime(job.startTime)}</span>
-                        {job.endTime && <span>Ended: {formatDateTime(job.endTime)}</span>}
+                        {job.endTime && (
+                          <span>Ended: {formatDateTime(job.endTime)}</span>
+                        )}
                         <span>Duration: {getJobDuration(job)}</span>
                       </div>
 
                       {/* Progress */}
-                      {(job.status === 'Running' || job.status === 'Pending') && (
+                      {(job.status === "Running" ||
+                        job.status === "Pending") && (
                         <div className="mt-3">
                           <div className="flex items-center justify-between text-sm mb-1">
                             <span className="text-muted-foreground">
-                              {formatNumber(job.filesProcessed)} / {formatNumber(job.totalFiles)}{' '}
-                              files
+                              {formatNumber(job.filesProcessed)} /{" "}
+                              {formatNumber(job.totalFiles)} files
                             </span>
                             <span className="font-medium">{progress}%</span>
                           </div>
@@ -177,7 +180,7 @@ export default function JobsActivity() {
                         </div>
                       )}
 
-                      {job.status === 'Completed' && (
+                      {job.status === "Completed" && (
                         <p className="text-sm text-muted-foreground mt-2">
                           Processed {formatNumber(job.filesProcessed)} files
                         </p>
@@ -186,7 +189,9 @@ export default function JobsActivity() {
                       {/* Errors */}
                       {job.errors.length > 0 && isExpanded && (
                         <div className="mt-3 p-3 bg-destructive/10 rounded-lg">
-                          <p className="text-sm font-medium text-destructive mb-2">Errors:</p>
+                          <p className="text-sm font-medium text-destructive mb-2">
+                            Errors:
+                          </p>
                           <ul className="text-sm text-destructive space-y-1">
                             {job.errors.map((error, i) => (
                               <li key={i}>• {error}</li>
@@ -198,12 +203,12 @@ export default function JobsActivity() {
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
-                    {job.status === 'Running' && (
+                    {job.status === "Running" && (
                       <Button variant="outline" size="icon" className="h-8 w-8">
                         <Pause className="h-4 w-4" />
                       </Button>
                     )}
-                    {job.status === 'Failed' && (
+                    {job.status === "Failed" && (
                       <Button variant="outline" size="icon" className="h-8 w-8">
                         <RotateCcw className="h-4 w-4" />
                       </Button>
@@ -213,7 +218,9 @@ export default function JobsActivity() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => setExpandedJob(isExpanded ? null : job.id)}
+                        onClick={() =>
+                          setExpandedJob(isExpanded ? null : job.id)
+                        }
                       >
                         {isExpanded ? (
                           <ChevronUp className="h-4 w-4" />
