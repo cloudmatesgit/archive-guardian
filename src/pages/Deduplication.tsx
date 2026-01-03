@@ -278,9 +278,6 @@ export default function Deduplication() {
 
       {/* Pagination for duplicate groups */}
       <div className="flex items-center justify-between mt-4">
-        <p className="text-sm text-muted-foreground">
-          Showing {groups.length} groups
-        </p>
         <Button
           variant="outline"
           size="sm"

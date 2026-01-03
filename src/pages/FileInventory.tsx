@@ -316,7 +316,6 @@ export default function FileInventory() {
           >
             Previous
           </Button>
-          <span className="text-sm">Page {page + 1}</span>
           <Button
             variant="outline"
             size="sm"
